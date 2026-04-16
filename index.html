@@ -149,3 +149,321 @@
     </div>
     <div class="navigation-buttons">
         <button id="prev-btn" onclick="prevQuestion()" disabled>Back</button>
+        <button id="next-btn" onclick="nextQuestion()">Next</button>
+        <button id="submit-btn" onclick="processSubmission()" style="display:none;">Submit Quiz</button>
+    </div>
+</div>
+
+<div class="container" id="result-container">
+    <div id="already-taken-msg"></div>
+    <h1 id="ui-result-title" style="color: #333;">Quiz Results</h1>
+    
+    <div class="stats-container">
+        <div class="stat-points" id="stats-points"></div>
+        <div class="stat-correct" id="stats-correct"></div>
+        <div class="stat-wrong" id="stats-wrong"></div>
+    </div>
+
+    <div style="text-align: center;">
+        <button id="ui-view-answers-btn" onclick="toggleAnswers()">View Correct Answers</button>
+    </div>
+
+    <div id="review-container"></div>
+</div>
+
+<script>
+    const uiText = {
+        en: {
+            title: "Quiz",
+            back: "Back",
+            next: "Next",
+            submit: "Submit Quiz",
+            resultsTitle: "Quiz Results",
+            statsPoints: "Total Points: {0} / {1}",
+            statsCorrect: "Correct: {0}%",
+            statsWrong: "Wrong / Unanswered: {0}%",
+            viewAnswers: "View Correct Answers",
+            hideAnswers: "Hide Correct Answers",
+            yourAnswer: "Your Answer",
+            correctAnswer: "Correct Answer",
+            noAnswer: "Time out / No answer selected",
+            alreadyTaken: "You have already completed this quiz. Here are your previous results."
+        },
+        sv: {
+            title: "Quiz",
+            back: "Tillbaka",
+            next: "Nästa",
+            submit: "Skicka in Quiz",
+            resultsTitle: "Quiz-resultat",
+            statsPoints: "Totalt antal poäng: {0} / {1}",
+            statsCorrect: "Rätt: {0}%",
+            statsWrong: "Fel / Inget svar: {0}%",
+            viewAnswers: "Visa rätta svar",
+            hideAnswers: "Dölj rätta svar",
+            yourAnswer: "Ditt svar",
+            correctAnswer: "Rätt svar",
+            noAnswer: "Tiden gick ut / Inget svar valt",
+            alreadyTaken: "Du har redan genomfört detta quiz. Här är dina tidigare resultat."
+        }
+    };
+
+    const quizData = [
+        {
+            question: { en: "1. From what country does Samsung originate?", sv: "1. Från vilket land kommer Samsung?" },
+            options: { en: ["Earth", "North Korea", "South Korea", "Japan"], sv: ["Jorden", "Nordkorea", "Sydkorea", "Japan"] },
+            answer: 2
+        },
+        {
+            question: { en: "2. From what country does Transcom originate?", sv: "2. Från vilket land kommer Transcom?" },
+            options: { en: ["Milky Way Galaxy", "Malmö", "Sweden", "USA"], sv: ["Vintergatan", "Malmö", "Sverige", "USA"] },
+            answer: 2
+        },
+        {
+            question: { en: "3. Which operating system does Galaxy mobiles run?", sv: "3. Vilket operativsystem använder Galaxy-mobiler?" },
+            options: { en: ["Alien", "IOS", "Android", "Oxygen OS"], sv: ["Alien", "IOS", "Android", "Oxygen OS"] },
+            answer: 2
+        },
+        {
+            question: { en: "4. Where does Samsung SENA have its headquarters?", sv: "4. Var har Samsung SENA sitt huvudkontor?" },
+            options: { en: ["Kista", "Suwon", "London", "Copenhagen"], sv: ["Kista", "Suwon", "London", "Köpenhamn"] },
+            answer: 0
+        },
+        {
+            question: { en: "5. Which of these are a B2B product?", sv: "5. Vilken av dessa är en B2B-produkt?" },
+            options: { en: ["QLED TV", "Signage Screen", "Washing Machine", "Galaxy phone"], sv: ["QLED TV", "Signage-skärm", "Tvättmaskin", "Galaxy-telefon"] },
+            answer: 1
+        },
+        {
+            question: { en: "6. Which continents have Samsung SENA their operations?", sv: "6. På vilka kontinenter har Samsung SENA sin verksamhet?" },
+            options: { en: ["Europe, Africa", "Asia, America", "Antarctica, Oceania", "Middle East, South America"], sv: ["Europa, Afrika", "Asien, Amerika", "Antarktis, Oceanien", "Mellanöstern, Sydamerika"] },
+            answer: 0
+        },
+        {
+            question: { en: "7. Samsung's construction division (Samsung C&T) helped build which of these iconic, record-breaking skyscrapers?", sv: "7. Samsungs byggdivision (Samsung C&T) hjälpte till att bygga vilken av dessa ikoniska, rekordstora skyskrapor?" },
+            options: { en: ["The Empire State Building", "The Shard", "The Eiffel Tower", "The Burj Khalifa"], sv: ["Empire State Building", "The Shard", "Eiffeltornet", "Burj Khalifa"] },
+            answer: 3
+        },
+        {
+            question: { en: "8. What is the name of Business Manager for Transcom/Samsung in Kista?", sv: "8. Vad heter Business Manager för Transcom/Samsung i Kista?" },
+            options: { en: ["Claus Von Staffenberg", "Davor Japuncic", "Nathalie Löfbom", "Claus Hansen"], sv: ["Claus Von Staffenberg", "Davor Japuncic", "Nathalie Löfbom", "Claus Hansen"] },
+            answer: 3
+        },
+        {
+            question: { en: "9. Who is Marcus Turesson?", sv: "9. Vem är Marcus Turesson?" },
+            options: { en: ["G.O.A.T", "Samsung CEO", "Samsung, Customer Interaction Manager", "Transcom CEO"], sv: ["G.O.A.T", "Samsung CEO", "Samsung, Customer Interaction Manager", "Transcom CEO"] },
+            answer: 2
+        },
+        {
+            question: { en: "10. On which floor does Transcom have its office?", sv: "10. På vilken våning har Transcom sitt kontor?" },
+            options: { en: ["Floor # 5", "Floor # 4", "Floor # 6", "Floor # 3"], sv: ["Våning 5", "Våning 4", "Våning 6", "Våning 3"] },
+            answer: 0
+        }
+    ];
+
+    let currentLang = 'en';
+    let currentQuestion = 0;
+    let userAnswers = new Array(quizData.length).fill(null);
+    let answersVisible = false;
+    
+    let timerInterval;
+    // Updated initial time variable
+    let timeLeft = 30;
+
+    window.onload = function() {
+        if (localStorage.getItem('quizCompleted') === 'true') {
+            const savedLang = localStorage.getItem('quizLang') || 'en';
+            const savedCorrect = parseInt(localStorage.getItem('quizCorrectCount'));
+            const savedAnswers = JSON.parse(localStorage.getItem('quizAnswers'));
+            showResults(savedCorrect, savedAnswers, savedLang, true);
+            return;
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const hasAccess = urlParams.get('access') === 'granted';
+
+        if (hasAccess) {
+            document.getElementById('qr-container').style.display = 'none';
+            document.getElementById('lang-container').style.display = 'block';
+        }
+    };
+
+    function simulateScan() {
+        const currentUrl = window.location.href.split('?')[0];
+        window.location.href = currentUrl + "?access=granted";
+    }
+
+    function startQuiz(lang) {
+        currentLang = lang;
+        document.getElementById('lang-container').style.display = 'none';
+        document.getElementById('quiz-container').style.display = 'block';
+        
+        document.getElementById('ui-quiz-title').innerText = uiText[lang].title;
+        document.getElementById('prev-btn').innerText = uiText[lang].back;
+        document.getElementById('next-btn').innerText = uiText[lang].next;
+        document.getElementById('submit-btn').innerText = uiText[lang].submit;
+        
+        loadQuestion();
+    }
+
+    const questionText = document.getElementById('question-text');
+    const optionsContainer = document.getElementById('options-container');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const submitBtn = document.getElementById('submit-btn');
+    const progressBar = document.getElementById('progress');
+    const timerElement = document.getElementById('retro-timer');
+
+    function updateProgress() {
+        const percentage = ((currentQuestion + 1) / quizData.length) * 100;
+        progressBar.style.width = `${percentage}%`;
+    }
+
+    function startTimer() {
+        clearInterval(timerInterval); 
+        // Updated timer reset value to 30
+        timeLeft = 30; 
+        
+        timerElement.innerText = timeLeft;
+        timerElement.classList.remove('time-low');
+
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            timerElement.innerText = timeLeft;
+
+            if (timeLeft <= 5) {
+                timerElement.classList.add('time-low');
+            }
+
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                autoAdvance();
+            }
+        }, 1000);
+    }
+
+    function autoAdvance() {
+        if (currentQuestion < quizData.length - 1) {
+            currentQuestion++;
+            loadQuestion();
+        } else {
+            processSubmission(); 
+        }
+    }
+
+    function loadQuestion() {
+        const currentQuizData = quizData[currentQuestion];
+        questionText.innerText = currentQuizData.question[currentLang];
+        optionsContainer.innerHTML = '';
+
+        currentQuizData.options[currentLang].forEach((option, index) => {
+            const label = document.createElement('label');
+            const radio = document.createElement('input');
+            radio.type = 'radio';
+            radio.name = 'answer';
+            radio.value = index;
+            
+            if (userAnswers[currentQuestion] === index) radio.checked = true;
+            
+            radio.addEventListener('change', () => { userAnswers[currentQuestion] = index; });
+            
+            label.appendChild(radio);
+            label.appendChild(document.createTextNode(option));
+            optionsContainer.appendChild(label);
+        });
+
+        prevBtn.disabled = currentQuestion === 0;
+        
+        if (currentQuestion === quizData.length - 1) {
+            nextBtn.style.display = 'none';
+            submitBtn.style.display = 'block';
+        } else {
+            nextBtn.style.display = 'block';
+            submitBtn.style.display = 'none';
+        }
+        
+        updateProgress();
+        startTimer(); 
+    }
+
+    function prevQuestion() { if (currentQuestion > 0) { currentQuestion--; loadQuestion(); } }
+    function nextQuestion() { if (currentQuestion < quizData.length - 1) { currentQuestion++; loadQuestion(); } }
+
+    function processSubmission() {
+        clearInterval(timerInterval); 
+        
+        let correctCount = 0;
+        quizData.forEach((q, index) => {
+            if (userAnswers[index] === q.answer) correctCount++;
+        });
+
+        localStorage.setItem('quizCompleted', 'true');
+        localStorage.setItem('quizCorrectCount', correctCount);
+        localStorage.setItem('quizAnswers', JSON.stringify(userAnswers));
+        localStorage.setItem('quizLang', currentLang);
+
+        showResults(correctCount, userAnswers, currentLang, false);
+    }
+
+    function showResults(correctCount, submittedAnswers, lang, isAlreadyTaken) {
+        currentLang = lang;
+        
+        document.getElementById('qr-container').style.display = 'none';
+        document.getElementById('lang-container').style.display = 'none';
+        document.getElementById('quiz-container').style.display = 'none';
+        
+        if (isAlreadyTaken) {
+            document.getElementById('already-taken-msg').innerText = uiText[lang].alreadyTaken;
+        }
+
+        document.getElementById('ui-result-title').innerText = uiText[lang].resultsTitle;
+        
+        const totalPoints = correctCount * 2;
+        const maxPoints = quizData.length * 2;
+
+        const pctCorrect = Math.round((correctCount / quizData.length) * 100);
+        const pctWrong = 100 - pctCorrect;
+        
+        document.getElementById('stats-points').innerText = uiText[lang].statsPoints.replace('{0}', totalPoints).replace('{1}', maxPoints);
+        document.getElementById('stats-correct').innerText = uiText[lang].statsCorrect.replace('{0}', pctCorrect);
+        document.getElementById('stats-wrong').innerText = uiText[lang].statsWrong.replace('{0}', pctWrong);
+
+        const reviewContainer = document.getElementById('review-container');
+        reviewContainer.innerHTML = '';
+        document.getElementById('ui-view-answers-btn').innerText = uiText[lang].viewAnswers;
+
+        quizData.forEach((q, index) => {
+            const isCorrect = submittedAnswers[index] === q.answer;
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result-item ${isCorrect ? 'correct' : 'incorrect'}`;
+            
+            let userAnswerText = submittedAnswers[index] !== null ? q.options[lang][submittedAnswers[index]] : `<em>${uiText[lang].noAnswer}</em>`;
+            let correctAnswerText = q.options[lang][q.answer];
+
+            resultDiv.innerHTML = `
+                <strong>${q.question[lang]}</strong><br>
+                ${uiText[lang].yourAnswer}: ${userAnswerText} <br>
+                ${!isCorrect ? `<strong>${uiText[lang].correctAnswer}:</strong> ${correctAnswerText}` : ''}
+            `;
+            reviewContainer.appendChild(resultDiv);
+        });
+
+        document.getElementById('result-container').style.display = 'block';
+    }
+
+    function toggleAnswers() {
+        const reviewContainer = document.getElementById('review-container');
+        const viewBtn = document.getElementById('ui-view-answers-btn');
+        
+        answersVisible = !answersVisible;
+        
+        if (answersVisible) {
+            reviewContainer.style.display = 'block';
+            viewBtn.innerText = uiText[currentLang].hideAnswers;
+        } else {
+            reviewContainer.style.display = 'none';
+            viewBtn.innerText = uiText[currentLang].viewAnswers;
+        }
+    }
+</script>
+</body>
+</html>
