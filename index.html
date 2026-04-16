@@ -37,7 +37,6 @@
         letter-spacing: 1px;
     }
 
-    /* Styling for the static uploaded QR image */
     #static-qr {
         display: block;
         margin: 0 auto 20px auto;
@@ -264,16 +263,22 @@
     let currentQuestion = 0;
     let userAnswers = new Array(quizData.length).fill(null);
     let answersVisible = false;
-    
     let timerInterval;
-    // Updated initial time variable
     let timeLeft = 30;
 
+    // CHANGED: Using brand new keys so it won't conflict with the old quiz!
+    const storageKeys = {
+        completed: 'samsungQuizV2Completed',
+        lang: 'samsungQuizV2Lang',
+        correct: 'samsungQuizV2CorrectCount',
+        answers: 'samsungQuizV2Answers'
+    };
+
     window.onload = function() {
-        if (localStorage.getItem('quizCompleted') === 'true') {
-            const savedLang = localStorage.getItem('quizLang') || 'en';
-            const savedCorrect = parseInt(localStorage.getItem('quizCorrectCount'));
-            const savedAnswers = JSON.parse(localStorage.getItem('quizAnswers'));
+        if (localStorage.getItem(storageKeys.completed) === 'true') {
+            const savedLang = localStorage.getItem(storageKeys.lang) || 'en';
+            const savedCorrect = parseInt(localStorage.getItem(storageKeys.correct));
+            const savedAnswers = JSON.parse(localStorage.getItem(storageKeys.answers));
             showResults(savedCorrect, savedAnswers, savedLang, true);
             return;
         }
@@ -320,7 +325,6 @@
 
     function startTimer() {
         clearInterval(timerInterval); 
-        // Updated timer reset value to 30
         timeLeft = 30; 
         
         timerElement.innerText = timeLeft;
@@ -396,10 +400,11 @@
             if (userAnswers[index] === q.answer) correctCount++;
         });
 
-        localStorage.setItem('quizCompleted', 'true');
-        localStorage.setItem('quizCorrectCount', correctCount);
-        localStorage.setItem('quizAnswers', JSON.stringify(userAnswers));
-        localStorage.setItem('quizLang', currentLang);
+        // CHANGED: Using the new keys to save data securely for this specific quiz
+        localStorage.setItem(storageKeys.completed, 'true');
+        localStorage.setItem(storageKeys.correct, correctCount);
+        localStorage.setItem(storageKeys.answers, JSON.stringify(userAnswers));
+        localStorage.setItem(storageKeys.lang, currentLang);
 
         showResults(correctCount, userAnswers, currentLang, false);
     }
