@@ -64,6 +64,12 @@
     .stat-correct { color: #155724; }
     .stat-wrong { color: #721c24; }
 
+    /* Result Item Styles */
+    #review-container { display: none; margin-top: 20px; }
+    .result-item { margin-bottom: 15px; padding: 15px; border-radius: 8px; }
+    .correct { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+    .incorrect { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+
     /* Leaderboard Styles */
     .leaderboard-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
     .leaderboard-table th, .leaderboard-table td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
@@ -135,6 +141,11 @@
         <div class="stat-wrong" id="stats-wrong"></div>
     </div>
 
+    <div style="text-align: center;">
+        <button class="btn-main" style="width: auto; padding: 10px 20px; margin-bottom: 0;" id="ui-view-answers-btn" onclick="toggleAnswers()">View Correct Answers</button>
+    </div>
+    <div id="review-container"></div>
+
     <div id="leaderboard-section" style="margin-top: 30px; border-top: 2px solid #eee; padding-top: 20px;">
         <h2 id="ui-leaderboard-title">Global Leaderboard</h2>
         <p id="loading-leaderboard" style="text-align:center;">Loading scores...</p>
@@ -173,7 +184,12 @@
             colName: "Name",
             colScore: "Score (%)",
             errorDB: "Could not load global leaderboard.",
-            alreadyTaken: "You have already completed this quiz. Here are the results."
+            alreadyTaken: "You have already completed this quiz. Here are the results.",
+            viewAnswers: "View Correct Answers",
+            hideAnswers: "Hide Correct Answers",
+            yourAnswer: "Your Answer",
+            correctAnswer: "Correct Answer",
+            noAnswer: "Time out / No answer selected"
         },
         sv: {
             nameTitle: "Skriv in ditt namn",
@@ -191,7 +207,12 @@
             colName: "Namn",
             colScore: "Poäng (%)",
             errorDB: "Kunde inte ladda global poängtavla.",
-            alreadyTaken: "Du har redan genomfört detta quiz. Här är resultaten."
+            alreadyTaken: "Du har redan genomfört detta quiz. Här är resultaten.",
+            viewAnswers: "Visa rätta svar",
+            hideAnswers: "Dölj rätta svar",
+            yourAnswer: "Ditt svar",
+            correctAnswer: "Rätt svar",
+            noAnswer: "Tiden gick ut / Inget svar valt"
         }
     };
 
